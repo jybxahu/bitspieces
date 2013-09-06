@@ -4,3 +4,6 @@
 *.jar
 *.war
 *.ear
+
+# Idea Project Meta data #
+*.iml
