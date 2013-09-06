@@ -7,3 +7,5 @@
 
 # Idea Project Meta data #
 *.iml
+.idea/
+target/
