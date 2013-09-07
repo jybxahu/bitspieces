@@ -5,6 +5,8 @@ object BitsPiecesBuild extends Build {
 
   lazy val root = Project("root", file("."), settings = rootSetting) aggregate(algorithm)
   lazy val algorithm = Project("algorithm", file("algorithm"), settings = algorithmSetting)
+  lazy val aitradeInterface = Project("aitradeInterface", file("aitradeInterface"), settings = aitradeInterfaceSetting)
+  lazy val aitradeDataAccessors = Project("aitradeDataAccessors", file("aitradeDataAccessors"), settings = aitradeDataAccessorsSetting).dependsOn(aitradeInterface)
 
   def sharedSetting = Defaults.defaultSettings ++ Seq(
     scalaVersion := "2.10.2",
@@ -31,5 +33,17 @@ object BitsPiecesBuild extends Build {
 
   def algorithmSetting = sharedSetting ++ Seq(
     name := "bitspieces-algorithm"
+  )
+
+  def aitradeInterfaceSetting = sharedSetting ++ Seq(
+    name := "aitradeInterface"
+  )
+
+  def aitradeDataAccessorsSetting = sharedSetting ++ Seq(
+    name := "aitradeDataAccessors",
+
+    libraryDependencies ++= Seq(
+      "commons-net" % "commons-net" % "3.3"
+    )
   )
 }
