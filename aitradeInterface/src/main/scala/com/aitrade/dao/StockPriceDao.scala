@@ -9,7 +9,8 @@ trait StockPriceDao {
    * Given a stock symbol, return a list of historical daily price for the given stock.
    * startDate and endDate are optional parameter, if startDate is None, this interface
    * should return the price since the stock is listed. If the endDate is None, this
-   * interface shoudl return the price to Now.
+   * interface should return the price to Now.
+   * The older price go first in the sequence, the newer price go after the older one.
    * @param symbol stock symbol
    * @param startDate start date of the price data series
    * @param endDate end date fo the price data series

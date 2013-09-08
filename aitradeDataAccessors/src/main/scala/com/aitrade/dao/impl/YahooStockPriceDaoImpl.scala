@@ -1,17 +1,20 @@
 package com.aitrade.dao.impl
 
 import com.aitrade.dao.StockPriceDao
-import java.util.{Calendar, Date}
+import java.util.{TimeZone, SimpleTimeZone, Calendar, Date}
 import com.aitrade.StockPrice
 import scala.collection.mutable.ArrayBuffer
 import java.net.URL
 import scala.io.Source
 import java.text.SimpleDateFormat
+import java.io.FileNotFoundException
 
 /**
  * http://code.google.com/p/yahoo-finance-managed/wiki/csvHistQuotesDownload
  */
 class YahooStockPriceDaoImpl extends StockPriceDao {
+
+
   /**
    * Given a stock symbol, return a list of historical daily price for the given stock.
    * startDate and endDate are optional parameter, if startDate is None, this interface
@@ -22,30 +25,37 @@ class YahooStockPriceDaoImpl extends StockPriceDao {
    * @param endDate end date fo the price data series
    */
   def getHistoricalStockPrice(symbol: String, startDate: Option[Date], endDate: Option[Date]): Seq[StockPrice] = {
+    val DATE_FORMATTER = new SimpleDateFormat("yyyy-MM-dd")
     val DataPattern = YahooStockPriceDaoImpl.RAW_DATA_PATTERN.r
     val rawData = getRawData(symbol, startDate, endDate)
     // verify the header format to make sure the data is returned as expected
     require(YahooStockPriceDaoImpl.RAW_DATA_HEADER == rawData.head.trim, "The returned header is different " +
       "from expected value. The returned value is " + rawData.head.trim)
+    // TODO verify the newer price go first because of the reverse before returning result
     val result = ArrayBuffer.empty[StockPrice]
     // rawData.drop(1) to ignore the header
     for(str <- rawData.drop(1)) {
-      str match {
+      str.trim match {
         case DataPattern(date, open, high, low, close, volume, adjustedClose) => {
-          result += StockPrice(
-            YahooStockPriceDaoImpl.DATE_FORMATTER.parse(date),
-            open.toDouble,
-            high.toDouble,
-            low.toDouble,
-            close.toDouble,
-            volume.toDouble,
-            adjustedClose.toDouble
-          )
+          try {
+            result += StockPrice(
+              DATE_FORMATTER.parse(date),
+              open.toDouble,
+              high.toDouble,
+              low.toDouble,
+              close.toDouble,
+              volume.toDouble,
+              adjustedClose.toDouble
+            )
+          } catch {
+            case e:NumberFormatException => println(symbol, str); e.printStackTrace()
+          }
         }
         case _ => throw new RuntimeException("Unrecoganized data got from yahoo server.")
       }
     }
-    result
+    // reverse the seq
+    result.reverse
   }
 
   /**
@@ -54,15 +64,18 @@ class YahooStockPriceDaoImpl extends StockPriceDao {
    * @return
    */
   def getRawData(symbol: String, startDate: Option[Date], endDate: Option[Date]): Seq[String] = {
-
-    val url = new URL(getRequestUrl(symbol, startDate, endDate))
-    val in = Source.fromURL(url)
-    val result = ArrayBuffer.empty[String]
-    for (line <- in.getLines()) {
-      result += line
+    try {
+      val url = new URL(getRequestUrl(symbol, startDate, endDate))
+      val in = Source.fromURL(url)
+      val result = ArrayBuffer.empty[String]
+      for (line <- in.getLines()) {
+        result += line
+      }
+      // return the raw data
+      result
+    } catch {
+      case e: FileNotFoundException => throw e
     }
-    // return the raw data
-    result
   }
 
   /**
@@ -120,6 +133,4 @@ object YahooStockPriceDaoImpl {
   val RAW_DATA_PATTERN = """(\d\d\d\d-\d\d-\d\d),([0-9\.]*),([0-9\.]*),([0-9\.]*),([0-9\.]*),([0-9\.]*),([0-9\.]*)"""
   // Header format
   val RAW_DATA_HEADER = "Date,Open,High,Low,Close,Volume,Adj Close"
-  // date time formatter
-  val DATE_FORMATTER = new SimpleDateFormat("yyyy-MM-dd")
 }
