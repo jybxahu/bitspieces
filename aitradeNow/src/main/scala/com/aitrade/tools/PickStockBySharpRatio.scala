@@ -19,13 +19,13 @@ object PickStockBySharpRatio extends App {
   val sharpRatioResult = ArrayBuffer.empty[(StockSymbol, Double)]
 
   val calendar = Calendar.getInstance()
-  calendar.set(2013,1,1,0,0,0)
+  calendar.set(2013,8,1,0,0,0)
   val startDate = calendar.getTime
 
   val counter: AtomicInteger = new AtomicInteger(0)
   val failure: AtomicInteger = new AtomicInteger(0)
 
-  val pool: ExecutorService = Executors.newFixedThreadPool(100)
+  val pool: ExecutorService = Executors.newFixedThreadPool(50)
 
   try {
     for(stockSymbol <- allStockSymbols) {
@@ -40,7 +40,7 @@ object PickStockBySharpRatio extends App {
     case e: Exception => throw e
   }
 
-  val sortedResult = sharpRatioResult.sortBy(_._2)
+  val sortedResult = sharpRatioResult.sortBy(_._2).reverse
   println("sharp ratio, symbol, company name")
   for(res <- sortedResult) {
     println(res._2, res._1.symbol, res._1.name)
@@ -64,7 +64,7 @@ object PickStockBySharpRatio extends App {
           println("Processed " + counter.get() + " stocks.")
         }
       } catch {
-        case e: FileNotFoundException => {
+        case e : FileNotFoundException => {
           failure.addAndGet(1)
           println("Failed to fetch the data for stock: " + stock.symbol)
           if(counter.addAndGet(1) % 50 == 0) {
@@ -72,8 +72,13 @@ object PickStockBySharpRatio extends App {
           }
         }
         case e: RuntimeException => {
+          println("Failed to calculate sharp ratio for stock: " + stock.symbol)
           failure.addAndGet(1)
+          if(counter.addAndGet(1) % 50 == 0) {
+            println("Processed " + counter.get() + " stocks.")
+          }
         }
+        case _ => println("There is uncaught exception.")
       }
     }
   }

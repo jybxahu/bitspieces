@@ -1,7 +1,7 @@
 package com.aitrade.dao.impl
 
 import com.aitrade.dao.StockPriceDao
-import java.util.{TimeZone, SimpleTimeZone, Calendar, Date}
+import java.util.{Calendar, Date}
 import com.aitrade.StockPrice
 import scala.collection.mutable.ArrayBuffer
 import java.net.URL
@@ -71,10 +71,15 @@ class YahooStockPriceDaoImpl extends StockPriceDao {
       for (line <- in.getLines()) {
         result += line
       }
+      in.close()
       // return the raw data
       result
     } catch {
       case e: FileNotFoundException => throw e
+      case e: java.net.ConnectException => {
+        //TODO create retry annotation
+        getRawData(symbol, startDate, endDate)
+      }
     }
   }
 
