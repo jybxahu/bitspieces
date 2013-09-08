@@ -14,6 +14,9 @@ class NASDAQStockSymbolDaoImpl extends GetAllSymbols {
   def getAllSymbols: Seq[StockSymbol] = {
     val DataPattern = NASDAQStockSymbolDaoImpl.RAW_DATA_PATTERN.r
     val rawData = getRawData()
+    // verify the head format to make sure the data is returned as expected
+    require(NASDAQStockSymbolDaoImpl.RAW_DATA_HEADER == rawData.head.trim, "The returned header is different " +
+      "from expected value. The returned value is " + rawData.head.trim)
     val result = new ArrayBuffer[StockSymbol]()
     // rawData.drop(1) to ignore the first element of the data
     for(str <- rawData.drop(1)) {
@@ -98,4 +101,6 @@ object NASDAQStockSymbolDaoImpl {
   val FTP_PASSWORD = "guest"
   //Raw data pattern
   val RAW_DATA_PATTERN = """(.*)\|(.*)\|(.*)\|(.*)\|(.*)\|(.*)"""
+  // Raw data header
+  val RAW_DATA_HEADER = "Symbol|Security Name|Market Category|Test Issue|Financial Status|Round Lot Size"
 }
